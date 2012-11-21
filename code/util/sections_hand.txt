@@ -1,0 +1,87 @@
+sex
+date of birth
+admission date
+discharge date
+service
+signed electronically by
+history of present illness
+allergies
+past medical history
+social history
+discharge medications
+discharge disposition
+medications on admission
+discharge diagnosis
+family history
+chief complaint
+discharge condition
+discharge instructions
+attending
+completed by
+physical exam
+brief hospital course
+major surgical or invasive procedure
+pertinent results
+followup instructions
+impression
+t
+sig
+d
+dictated by
+hospital course
+provider
+physical examination
+discharge diagnoses
+findings
+condition on discharge
+medications
+underlying medical condition
+discharge status
+laboratory data
+history
+medications on discharge
+past surgical history
+condition at discharge
+technique
+physical examination on presentation
+physical examination on admission
+review of systems
+follow up
+care recommendations
+follow-up
+primary diagnosis
+primary pediatrician
+history of the present illness
+name of primary pediatrician
+laboratory
+medications on transfer
+medications at home
+secondary diagnosis
+discharge instructions/followup
+summary of hospital course by systems
+care and recommendations
+pertinent laboratory values on presentation
+discharge followup
+radiology/imaging
+admission medications
+referring doctor
+follow-up plans
+hospital course by systems
+patient/test information
+physical exam on admission
+summary of hospital course
+pertinent laboratory data on presentation
+pertinent radiology/imaging
+read by
+laboratories on admission
+followup
+follow-up appointments
+medications prior to admission
+course
+hospital course by system
+admission diagnosis
+reviewed by
+follow-up instructions
+laboratory data on admission
+final diagnoses
+laboratory/radiologic data
