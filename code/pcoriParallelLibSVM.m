@@ -1,7 +1,8 @@
-function [bestParams bestModel] = callLibSVM(label, feat, plotLabel, type)
+function [bestParams, bestModel] = pcoriParallelLibSVM(label, feat, plotLabel, type)
 
 % Make sure labels are in a column vector. 
 label = double(label(:));
+label(label == -1) = 0;
 
 % Use a linear support vector machine classifier
 folds = 5;
@@ -17,7 +18,7 @@ Z = [];
 %accuracy, c param, g param
 bestParams = [0 1 1 0 0];
 
-%I TOOK OUT THE PAR
+%TOOK OUT THE PAR
 for iter = 1:length(log2c)*length(log2g)
     c_iter = ceil(iter / length(log2g));
     g_iter = mod(iter - 1, length(log2g)) + 1;
@@ -32,13 +33,9 @@ for iter = 1:length(log2c)*length(log2g)
         train = ~test;
 
         % If single class
-        if type == 2
-            model = svmtrain2(label(train & label==1), feat(train & label==1, :), ['-s ' num2str(type) '  -h 0 -c ', num2str(2^log2c(c_iter)), ' -g ', num2str(2^log2g(g_iter))]);
-        else
-            model = svmtrain2(label(train), feat(train, :), ['-s ' num2str(type) '  -h 0 -c ', num2str(2^log2c(c_iter)), ' -g ', num2str(2^log2g(g_iter))]);
-        end
+        model = svmtrain2(label(train), feat(train, :), ['-s ' num2str(type) '  -h 0 -c ', num2str(2^log2c(c_iter)), ' -g ', num2str(2^log2g(g_iter))]);
         [predict_label, accuracy, dec_values] = svmpredict(label(test), feat(test, :), model); 
-        %[~, ~, thresh, AUC, optPoint] = perfcurve(label(test), dec_values, 1);
+        [~, ~, thresh, AUC, optPoint] = perfcurve(label(test), dec_values, 1);
         
         lab = label(test);
         [tpr, fpr, ~] = roc(lab(:)', dec_values(:)');
@@ -53,8 +50,6 @@ for iter = 1:length(log2c)*length(log2g)
         tns = [tns; tn];
         fps = [fps; fp];
         fns = [fns; fn];
-
-        %acc = [acc; AUC]; %(tp+tn)/(tp+tn+fp+fn)
         
         sens = tp/(tp+fn); % also called recall.
         spec = tn/(tn+fp);
@@ -62,10 +57,9 @@ for iter = 1:length(log2c)*length(log2g)
         ppv = tp/(tp+fp);  % also called precision
         npv = tn/(tn+fn);
 
-        %acc = (tp+tn)/(tp+tn+fp+fn);
-
         fscore = 2*ppv*sens/(ppv+sens); % F1 score reaches its best value at 1 and worst score at 0.
         
+        %acc = [acc; auc];
         acc = [acc; auc];
     end
 

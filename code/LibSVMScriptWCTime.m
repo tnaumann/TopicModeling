@@ -10,28 +10,24 @@ WORDS_STEP = 1000;
 NUM_TOPICS =[50 75 100]; 
 NUM_WORDS = [500 1000 2000];
 MAX_TOPICS = 200;
+
 N = 5000;
 SEED = 1:length(NUM_TOPICS);
 OUTPUT = 1;
+
 TOPIC_SAVED = 0;
 WC_SAVED = 0;
 PAT_SAVED = 0;
 BASE_SAVED = 0;
-dataPath = '/scratch/mghassem/out_20120607';
-vocabFile = 'vocabulary.txt';        % list of words
-featFile = 'feature.txt';           % list of features sorted by patient_id
-wcFile = 'patient_data.txt';         % sparse representation of wc
+
+% Directory Paths to Data
+dataPath = '/scratch/mghassem/pcori-pilot-packed';
+vocabFile = 'vocabulary.txt';             % list of words
+featFile = 'feature.txt';                 % list of features sorted by patient_id
+wcFile = 'patient_data.txt';              % sparse representation of wc
 timeWCFile = 'patient_data_temporal.txt'; % sparse representation of wc in order
 patientMatchFile = 'patient_rows.txt'; 
 
-folds = 5;
-c_begin = -5; c_end = 15; c_step = 2;
-g_begin = 3; g_end = -15; g_step = -2;
-
-log2c = c_begin:c_step:c_end;
-log2g = g_begin:g_step:g_end;  
-
-numSteps = WORDS_LIMIT/WORDS_STEP;
 
 % =============================
 %     Step1. Data Input
@@ -132,17 +128,10 @@ else
     ylabel('Frequency');
     title('Note Time Distributions - All');
     close all;
+    
+    clear input;
 
-    clear input text;
-
-    %remove the text from discharge summaries
-    wc(dischargeNote, :) = []; sid2(dischargeNote, :) = []; hoursFromFirstNote(dischargeNote, :) = []; 
-    dischargeOnlyWords = (sum(wc, 1) == 0);
-    wc(:, dischargeOnlyWords) = [];
-    WO(dischargeOnlyWords) = [];
-    %test(dischargeNote) = []; train(dischargeNote) = [];
-
-    %find the training rows, and the associated subjIDs
+    % Find the training rows, and the associated subj-IDs
     trainNumbers = find(train == 1);
     inds = ismember(sid2, sid(trainNumbers));
 
@@ -218,7 +207,9 @@ else
     live = ~(died | long );
     lived1 = (survivalTime(train) > 0 & survivalTime(train) <= 30);
     lived6 = ~(died | long | lived1);
-    save TopicParams3.mat numPatients numWords BETA sid2;
+    
+    
+    save pcoriTopicParams.mat; numPatients numWords BETA sid2;
     save GibbsFile3.mat WS DS WO died long live; 
     save wcFiles3.mat wcTest test_TFIDF wcTrainSum -v7.3; 
     clear wcTrainSum WS DS WO died long lived;

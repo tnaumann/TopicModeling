@@ -15,13 +15,13 @@ N = 5000;
 SEED = 1:length(NUM_TOPICS);
 OUTPUT = 1;
 
-TOPIC_SAVED = 0;
-WC_SAVED = 0;
-PAT_SAVED = 0;
+TOPIC_SAVED = 1;
+WC_SAVED = 1;
+PAT_SAVED = 1;
 BASE_SAVED = 0;
 
 % Directory Paths to Data
-dataPath = '/scratch/mghassem/pcori-pilot-packed';
+dataPath = '/home/mghassem/Documents/MATLAB/studies/pcori/';
 vocabFile = 'vocabulary.txt';        % list of words
 featFile = 'feature.txt';           % list of features sorted by patient_id
 wcFile = 'patient_data.txt';         % sparse representation of wc
@@ -58,8 +58,9 @@ if PAT_SAVED == 1
 else    
     %--------------------------
     % Randomly pick the training and evaluation sets
-    %--------------------------          
-    [train, test] = crossvalind('HoldOut', numPat, .3);
+    %--------------------------        
+    outcome = daysToDeathFromFirstNote < 30;
+    [train, test] = crossvalind('HoldOut', outcome, .3);
     fprintf(1, [num2str(sum(train)) ' patients used to train topics models, ' ...
                 num2str(sum(test)) ' patients used to create SVMs\n']);
             
@@ -184,7 +185,7 @@ else
     live = updateD2D(train) >= 30;
     
     save pcoriTopicParams.mat numPatients numWords BETA sid2;
-    save pcoriGibbsFile.mat WS DS WO died live; 
+    save pcoriGibbsFile.mat WS DS WO died live updateD2D; 
     save pcoriWCFiles.mat wcTest test_TFIDF wcTrainSum -v7.3; 
     clear wcTrainSum WS DS WO died live;
     clear trainNumbers testOnlyWords emptyTestNotes ...
@@ -203,8 +204,6 @@ dataStoreWP = []; %number of times word i assigned to topics j, size is (NUM_WOR
 dataStoreDP = []; %number of times any word in doc i assigned to topics j, size is (NUM_PATIENTSxNUM_TOPICS)
 wpKey = [];
 dpKey = [];
-
-eval('pack');
 
 if TOPIC_SAVED == 1
     load 'pcoriLDASingle_WP.mat';
@@ -235,23 +234,24 @@ else
 %               
 %         %Normalize each row to sum to one
 %         topics50 = full(bsxfun(@rdivide, DP50, 1+sum(DP50, 2))); 
-%         topicsOfDead = sum(topics50(died, :))./sum(died);
-%         topicsOfLive = sum(topics50(live, :))./sum(live);
-%         topicsOfNotDead = sum(topics50(~died, :))./sum(~died);
-%         topicsOfNotLive = sum(topics50(~live, :))./sum(~live);
-%          
-%         [val, ind] = sort(topicsOfDead./topicsOfNotDead, 'descend')
-%                                
-%         find(topicsOfDead./topicsOfNotDead & topicsOfDead > 0.02)
-%         
-%         %plot images
-%         figure;                
-%         bar([topicsOfDead; ...
-%              topicsOfLive]', 'grouped');
-%          colormap([176/255 23/255 31/255; 0 205/255 0]);
-%         xlabel('Topic ID');
-%         ylabel('Median Topic Membership by Group');
-%         legend('30-Day Mortalities', '30-Day Survival', 'Location', 'NorthEast');   
+        topicsOfDead = sum(topics50(died, :))./sum(died);
+        topicsOfLive = sum(topics50(live, :))./sum(live);
+        topicsOfNotDead = sum(topics50(~died, :))./sum(~died);
+        topicsOfNotLive = sum(topics50(~live, :))./sum(~live);
+         
+        [val, ind] = sort(topicsOfDead./topicsOfNotDead, 'descend')
+                               
+        find(topicsOfDead./topicsOfNotDead & topicsOfDead > 0.02)
+        
+        %plot images
+        figure;                
+        bar([topicsOfDead; ...
+             topicsOfLive]', 'grouped');
+         colormap([176/255 23/255 31/255; 0 205/255 0]);
+        xlabel('Topic ID');
+        ylabel('Median Topic Membership by Group');
+        legend('30-Day Mortalities', '30-Day Survival', 'Location', 'NorthEast');   
+        xlim([0 51]);
 %         
 %         %plot images
 %         figure;                
@@ -260,27 +260,27 @@ else
 %         xlabel('Topic ID');
 %         ylabel('Median Topic Membership by Group');
 %         legend('30-Day Mortalities', '30-Day Survival', 'Location', 'NorthEast');    
-% 
-%         topics50 = bsxfun(@rdivide, DP50, 1+sum(DP50, 2));                        
-%         meansPerTopic = mean(topics50, 1); stdPerTopic = std(topics50, 1);
-%         negThresh = meansPerTopic - stdPerTopic;
-%         posThresh = meansPerTopic + stdPerTopic;
-%         
-%         posInd = (topics50 > repmat(posThresh, numPatients, 1));
-%         negInd = (topics50 < repmat(negThresh, numPatients, 1));
-%         topics50(:, :) = 0;
-%         topics50(negInd) = -1;
-%         topics50(posInd) = 1;
 %         
 %         
-%         figure;
-%         topics50 = [mean(topics50(died, :)); mean(topics50(live, :))];         
-%         bar([topics50(1, :); topics50(2, :)]', 'grouped');
-%         colormap([176/255 23/255 31/255; 0 205/255 0]);
-%         xlabel('Topic ID');
-%         ylabel('Topic Dominance (based on 1/#topics threshold) by Group');
-%         legend('30-Day Mortalities', '30-Day Survival', 'Location', 'NorthEast');    
-%         xlim([0 21]);
+        figure;
+        topics50 = bsxfun(@rdivide, DP50, 1+sum(DP50, 2));                        
+        meansPerTopic = mean(topics50, 1); stdPerTopic = std(topics50, 1);
+        negThresh = meansPerTopic - stdPerTopic;
+        posThresh = meansPerTopic + stdPerTopic;
+        
+        posInd = (topics50 > repmat(posThresh, numPatients, 1));
+        negInd = (topics50 < repmat(negThresh, numPatients, 1));
+        topics50(:, :) = 0;
+        topics50(negInd) = -1;
+        topics50(posInd) = 1;
+        
+        topics50 = [mean(topics50(died, :)); mean(topics50(live, :))];         
+        bar([topics50(1, :); topics50(2, :)]', 'grouped');
+        colormap([176/255 23/255 31/255; 0 205/255 0]);
+        xlabel('Topic ID');
+        ylabel('Topic Dominance (based on 1/#topics threshold) by Group');
+        legend('30-Day Mortalities', '30-Day Survival', 'Location', 'NorthEast');    
+        xlim([0 51]);
         
 %         %set(gcf, 'Position', [200 100 1000 650]);
 %         %I = getframe(gcf);
@@ -306,46 +306,39 @@ load pcoriTopicStruct.mat;
 WO = load('pcoriGibbsFile.mat', 'WO');
 WO = WO.WO;
 find(dpKey == 1)
-DP50 = dataStoreDP((numPatients*(find(dpKey == 1) - 1) + 1):(numPatients*(find(dpKey == 1))), 1:50);
-WP50 = dataStoreWP((numWords*(find(wpKey == 1) - 1) + 1):(numWords*(find(wpKey == 1))), 1:50);
+DP20 = dataStoreDP((numPatients*(find(dpKey == 1) - 1) + 1):(numPatients*(find(dpKey == 1))), 1:20);
+WP20 = dataStoreWP((numWords*(find(wpKey == 1) - 1) + 1):(numWords*(find(wpKey == 1))), 1:20);
+topics20 = bsxfun(@rdivide, DP20, 1+sum(DP20, 2)); 
+S20 = WriteTopics(WP20, BETA , WO, 20);%, 1.0, 20, 'topTenWordsPerTopic_20.txt');
+
+DP35 = dataStoreDP((numPatients*(find(dpKey == 2) - 1) + 1):(numPatients*(find(dpKey == 2))), 1:35); 
+WP35 = dataStoreWP((numWords*(find(wpKey == 2) - 1) + 1):(numWords*(find(wpKey == 2))), 1:35); 
+topics35 = bsxfun(@rdivide, DP35, 1+sum(DP35, 2)); 
+S35 = WriteTopics(WP35, BETA , WO, 20);%, 1.0, 20, 'topTenWordsPerTopic_35.txt');
+
+DP50 = dataStoreDP((numPatients*(find(dpKey == 3) - 1) + 1):(numPatients*(find(dpKey == 3))), 1:50);
+WP50 = dataStoreWP((numWords*(find(wpKey == 3) - 1) + 1):(numWords*(find(wpKey == 3))), 1:50);
 topics50 = bsxfun(@rdivide, DP50, 1+sum(DP50, 2)); 
-S50 = WriteTopics(WP50, BETA , WO, 10);
-
-DP75 = dataStoreDP((numPatients*(find(dpKey == 2) - 1) + 1):(numPatients*(find(dpKey == 2))), 1:75); 
-WP75 = dataStoreWP((numWords*(find(wpKey == 2) - 1) + 1):(numWords*(find(wpKey == 2))), 1:75); 
-topics75 = bsxfun(@rdivide, DP75, 1+sum(DP75, 2)); 
-S75 = WriteTopics(WP75, BETA , WO, 10);
-
-DP100 = dataStoreDP((numPatients*(find(dpKey == 3) - 1) + 1):(numPatients*(find(dpKey == 3))), 1:100);
-WP100 = dataStoreWP((numWords*(find(wpKey == 3) - 1) + 1):(numWords*(find(wpKey == 3))), 1:100);
-topics100 = bsxfun(@rdivide, DP100, 1+sum(DP100, 2)); 
-S100 = WriteTopics(WP100, BETA , WO, 10);
+S50 = WriteTopics(WP50, BETA , WO, 20);%, 1.0, 20, 'topTenWordsPerTopic_50.txt');
 
 %DP matrices are the Document( pateitn) x toic counts, 
 %Wp are the wordxtopic counts
 %topic matrices are the normalized distrinbutions per patient
 %S matrices are the top 10 owrds for each number of topics
-save 'pcoriLDASingle_topics.mat' DP50 WP50 S50 DP75 WP75 S75 DP100 WP100 S100; 
-save 'pcoriLDASingle_WP.mat' WP50 WP75 WP100;
+save 'pcoriLDASingle_topics.mat' DP20 WP20 S20 DP35 WP35 S35 DP50 WP50 S50; 
+save 'pcoriLDASingle_WP.mat' WP20 WP35 WP50;
 
 % =============================
 %     Step4. SVM Train/Test on WCSUm, this is per patient
 % =============================  
-load featureFiles2.mat;
-load wcFiles3.mat;
+load pcoriTopicParams.mat; % numPatients numWords BETA sid2;
+load pcoriWCFiles.mat;     % wcTest test_TFIDF wcTrainSum -v7.3; 
+load pcoriGibbsFile.mat;
 
 %--------------------------
-% Outcomes are: 
-% 1) hospExpireFlag
-% 2) survivalTime > 30
-% 3) survivalTime > 30*6
-% 4) readmit < 30*6
+% Outcome: survivalTime > 30
 %--------------------------
-%outcome(hospExpireFlag) = 0;
-%outcome(survivalTime > 30) = 1;
-%outcome(survivalTime > 30*6) = 2;
-%outcome = outcome';
-outcome = [hospExpireFlag(test) survivalTime(test) < 30 survivalTime(test) < 30*6]; %readmit < 30*6];
+outcome = double(updateD2D < 30);
 testNumbers = find(test == 1);
 inds = ismember(sid2, sid(testNumbers));
 testIDs = unique(sid2(inds)); sidTest = sid2(inds);
@@ -358,80 +351,81 @@ numWords = size(wcTest, 2);
 wcTestSum = zeros(length(testIDs), numWords);
 wcTestSum = S*wcTest;
 
-%--------------------------
-% Create baseline models with ages, sex, SAPS and SOFA, and those plus EHs
-%--------------------------
-feat = features(test, :);
-feat = (feat - repmat(min(feat,[],1), ...
-                   size(feat,1),1)) ...
-           *spdiags(1./(max(feat,[],1) ...
-                    -min(feat,[],1))',0, ...
-                    size(feat,2), ...
-                    size(feat,2));   %
+savedParamsTopic = zeros(length(NUM_TOPICS), 7);
+savedParamsWords = zeros(length(NUM_WORDS), 5);
+savedPerfTopic = zeros(length(NUM_TOPICS), 6);
+savedPerfWords = zeros(length(NUM_WORDS), 6);
 
-%[cvacc log2c(c_iter) log2g(g_iter) cvtp cvtn cvfp cvfn]
-savedParamsBase = zeros(3, 5);
-savedParamsBaseEH = zeros(3, 5);   
-savedParamsTopic = zeros(3, length(NUM_TOPICS), 7);
-savedParamsBaseTopic = zeros(3, length(NUM_TOPICS), 7);
-savedParamsWords = zeros(3, length(NUM_WORDS), 5);
-savedParamsBaseWords = zeros(3, length(NUM_WORDS), 5);
-load allVars3.mat;
-
-matlabpool open local 8
-
-allInd = logical(ones(size(feat, 1), 1));
-for j = 1:size(outcome, 2)
-
-    %after in hosp mort, remove all the ones that die in hosp
-    if j > 1
-        allInd = ~hospExpireFlag(test);
-    end
-    
-    plotLabel = 'bullsEyeBaseline';
-    savedParamsBase(j, :) = parallelLibSVM(double(outcome(allInd, j)), ...
-                        double(feat(allInd, 1:6)), log2c, log2g, folds, plotLabel);
-    plotLabel = 'bullsEyeBaselineEH';
-    savedParamsBaseEH(j, :) = parallelLibSVM(double(outcome(allInd, j)),  ...
-                       double(feat(allInd, :)), log2c, log2g, folds, plotLabel);
-end
-
-fprintf(1, 'Done with Baseline SVM Outcomes\n');
-save allVars3.mat savedParamsBase savedParamsBaseEH;
+% remove the 0 day mortalities
+allInd =  updateD2D > 0;
+plotLabel = 'bullsEyeBaseline';
 
 %--------------------------
 %Model with topics only
 %--------------------------
-for k = 1:length(NUM_TOPICS)
-    allInd = logical(ones(size(feat, 1), 1));
-    for j = 1:size(outcome, 2)
-        
-        %after in hosp mort, remove all the ones that die in hosp
-        if j > 1
-            allInd = ~hospExpireFlag(test);
-        end
-        
-        % Get test population's topic membership    
-        eval(['topicMem = wcTestSum*WP' num2str(NUM_TOPICS(k)) ';']);
-        normfeat = bsxfun(@rdivide, topicMem, 1+sum(topicMem, 2));
+for k = 1:length(NUM_TOPICS)        
+    
+    % Get train population's topic membership    
+    eval(['normfeat = topics' num2str(NUM_TOPICS(k)) ';']);            
+    plotLabel = ['bullsEye' num2str(NUM_TOPICS(k)) 'Topics'];
+    [bestParams, bestModel] = pcoriParallelLibSVM(outcome(train), normfeat, 'two_class', 0);    
 
-        %TODO iterative refinment of c/g
-        %use only topics as features
-        plotLabel = ['bullsEye' num2str(NUM_TOPICS(k)) 'Topics'];
-        savedParamsTopic(j, k, :) = parallelLibSVM(double(outcome(allInd, j)), double(normfeat(allInd, :)), log2c, log2g, folds, plotLabel);
+    % Evaluate on the test set
+    eval(['topicMem = wcTestSum*WP' num2str(NUM_TOPICS(k)) ';']);
+    topicMem = bsxfun(@rdivide, topicMem, 1+sum(topicMem, 2));
+    [predict_label1, accuracy1, dec_values1] = ...
+            svmpredict(double(outcome(test)'), double(topicMem), bestModel);    
+    [sens, spec, ppv, npv, acc, fscore] = ...
+            summaryOfPerf(double(outcome(test)), double(dec_values1), [num2str(k) ': Best two class SVM Model on 20% held out data had ']);
 
-        %add the topics as features, run the libSVM and save output
-        %featTemp = [feat(:, 1:6) normfeat];
-        %plotLabel = ['bullsEye' num2str(NUM_TOPICS(k)) 'BaseTopics'];
-        %savedParamsBaseTopic(j, k, :) = parallelLibSVM(double(outcome(test & allInd, j)), double(featTemp(allInd, :)), log2c, log2g, folds, plotLabel);
-    end
+    savedParamsTopic(k, :) = bestParams;
+    savedPerfTopic(k, :) = [sens spec ppv npv acc fscore];
 end
 
+% Plot for the test set
+died = (updateD2D(test) < 30);
+live = updateD2D(test) >= 30;
+topicsOfDead = sum(topicMem(died, :))./sum(died);
+topicsOfLive = sum(topicMem(live, :))./sum(live);
+topicsOfNotDead = sum(topicMem(~died, :))./sum(~died);
+topicsOfNotLive = sum(topicMem(~live, :))./sum(~live);
+
+%plot images
+figure;                
+bar([topicsOfDead; ...
+     topicsOfLive]', 'grouped');
+ colormap([176/255 23/255 31/255; 0 205/255 0]);
+xlabel('Topic ID');
+ylabel('Median Topic Membership by Group');
+legend('30-Day Mortalities', '30-Day Survival', 'Location', 'NorthEast');   
+xlim([0 51]);
+
+figure;
+meansPerTopic = mean(topicMem, 1); stdPerTopic = std(topicMem, 1);
+negThresh = meansPerTopic - stdPerTopic;
+posThresh = meansPerTopic + stdPerTopic;
+
+posInd = (topicMem > repmat(posThresh, 300, 1));
+negInd = (topicMem < repmat(negThresh, 300, 1));
+topics50 = zeros(size(topicMem));
+topics50(negInd) = -1;
+topics50(posInd) = 1;
+
+topics50 = [mean(topics50(died, :)); mean(topics50(live, :))];         
+bar([topics50(1, :); topics50(2, :)]', 'grouped');
+colormap([176/255 23/255 31/255; 0 205/255 0]);
+xlabel('Topic ID');
+ylabel('Topic Dominance (based on 1/#topics threshold) by Group');
+legend('30-Day Mortalities', '30-Day Survival', 'Location', 'NorthEast');    
+xlim([0 51]);
+
 fprintf(1, 'Done with Topic SVM Outcomes\n');
-save allVars3.mat savedParamsBase savedParamsBaseEH ...
+save pcoriAllVars3.mat savedParamsBase savedParamsBaseEH ...
      savedParamsBaseTopic savedParamsBaseWords -append;
- 
- 
+
+% Print them 
+savedParamsTopic
+
 %--------------------------
 % Pick only the top N words
 %--------------------------
@@ -440,21 +434,8 @@ tfidfSum = S*test_TFIDF;
 [perPatientNoteNum, id] = hist(sidTest, unique(sidTest));
 tfidfSum = tfidfSum ./ repmat(perPatientNoteNum', 1, size(tfidfSum, 2));
 
-firstQ = floor(size(test_TFIDF, 1)/4);
-secondQ = floor(size(test_TFIDF, 1)/2);
-thirdQ = floor(3*size(test_TFIDF, 1)/4);
-
-t1 = test_TFIDF(1:firstQ, :); 
-t2 = test_TFIDF(firstQ+1:secondQ, :);
-t3 = test_TFIDF(secondQ+1:thirdQ, :); 
-t4 = test_TFIDF(thirdQ+1:end, :);
-clear test_TFIDF;
-eval('pack;');
-
-[mat, wInd1] = sort(t1, 2, 'descend'); clear mat t1; wInd1 = wInd1(:, 1:5000);  
-[mat, wInd2] = sort(t2, 2, 'descend'); clear mat t2; wInd2 = wInd2(:, 1:5000);  
-[mat, wInd3] = sort(t3, 2, 'descend'); clear mat t3; wInd3 = wInd3(:, 1:5000);  
-[mat, wInd4] = sort(t4, 2, 'descend'); clear mat t4; wInd4 = wInd4(:, 1:5000); 
+[~, wInd] = sort(test_TFIDF, 2, 'descend'); clear mat t1; 
+wInd1 = wInd1(:, 1:5000);  
 
 %--------------------------
 % Word models
@@ -462,11 +443,10 @@ eval('pack;');
 outcome = outcome(test, :);
 for i=1:length(NUM_WORDS)
     numWords = NUM_WORDS(i);  
-    keep = unique(wInd1(:, 1:numWords));%; wInd2(:, 1:numWords); wInd3(:, 1:numWords); wInd4(:, 1:numWords)]);
+    keep = unique(wInd1(:, 1:numWords));
 
     featTemp = tfidfSum(:, keep);
     featTemp(:, find(sum(featTemp) == 0)) = [];
-    %featTemp(:, find(sum(featTemp) == 0)) = [];
 
     %scale the feature matrix
     featTemp = (featTemp - repmat(min(featTemp,[],1), ...
@@ -478,20 +458,11 @@ for i=1:length(NUM_WORDS)
     save dataForParForRun.mat outcome test featTemp log2c log2g folds plotLabel -v7.3;
     clear featTemp;
 
-	for j = 1:size(outcome, 2)-1
         %--- Words model with only words
         plotLabel = ['bullsEye' num2str(numWords) 'Words'];
-        savedParamsWords(j, i, :) = parallelLibSVM2(j, log2c, log2g, folds, plotLabel);
-        %savedParamsWords(j, i, :) = parallelLibSVM(double(outcome(test, j)), double(featTemp), log2c, log2g, folds, plotLabel);
-        %featTemp = [feat(:, 1:4) featTemp];
-
-        %--- Word Model without EH, 
-        %plotLabel = ['bullsEye' num2str(numWords) 'BaseWords'];
-        %savedParamsBaseWords(j, i, :) = parallelLibSVM(double(outcome(test, j)), double(featTemp), log2c, log2g, folds, plotLabel);
-    end
+        %savedParamsWords(j, i, :) = parallelLibSVM2(j, log2c, log2g, folds, plotLabel);
+        savedParamsWords(i, :) = parallelLibSVM(double(outcome(test, j)), double(featTemp), log2c, log2g, folds, plotLabel);
 end
-
-matlabpool close
 
 fprintf(1, 'Done with Word SVM Outcomes\n');
 
@@ -517,10 +488,4 @@ for j = 1:size(outcome, 2)
      legend('Base Model', 'Word Features', 'Topic Features');
      addTopXAxis('expression', 'argu.*.1', 'xLabStr', 'Number of Topics');
 end
-
-% =============================
-%     Step6. SVM Train/Test on WCSUm, this is per note!
-% =============================  
-
-
   

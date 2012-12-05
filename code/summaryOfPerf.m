@@ -12,13 +12,13 @@ predict_label = zeros(size(singleClassLabels));
 % ylabel('Classification Accuracy');
 [maxaccu,iaccu] = max(accu);
 optimalthresh = thresh(iaccu);
-predict_label(dec_values < optimalthresh) = -1;
+predict_label(dec_values < optimalthresh) = 0;
 predict_label(dec_values >= optimalthresh) = 1;
 
 tp = sum(singleClassLabels & predict_label);
-tn = sum(singleClassLabels==-1 & predict_label==-1);
-fp = sum(singleClassLabels==-1 & predict_label);
-fn = sum(singleClassLabels & predict_label==-1);
+tn = sum(singleClassLabels~=1 & predict_label~=1);
+fp = sum(singleClassLabels~=1 & predict_label);
+fn = sum(singleClassLabels & predict_label~=1);
 sens = tp/(tp+fn); % also called recall.
 spec = tn/(tn+fp);
 
